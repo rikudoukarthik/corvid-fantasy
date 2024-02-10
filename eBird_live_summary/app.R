@@ -8,16 +8,16 @@ library(writexl)
 library(rebird)
 
 
-source("eBird_live_summary/token.R") # Get an eBird API token and assign it to object myebirdtoken
-source("eBird_live_summary/functions.R")
+source("token.R") # Get an eBird API token and assign it to object myebirdtoken
+source("functions.R")
 
 # for sort order of species
 # ebd <- ebirdtaxonomy(key = myebirdtoken) %>%
 #   rename(ENGLISH.NAME = comName) %>%
 #   mutate(SORT = 1:n()) %>% 
 #   dplyr::select(ENGLISH.NAME, SORT)
-# write_csv(ebd, "eBird_live_summary/eBirdTaxonomy.csv")
-ebd <- read_csv("eBird_live_summary/eBirdTaxonomy.csv")
+# write_csv(ebd, "eBirdTaxonomy.csv")
+ebd <- read_csv("eBirdTaxonomy.csv")
 
 
 # Define UI for app ----

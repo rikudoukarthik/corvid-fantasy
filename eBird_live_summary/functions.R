@@ -246,7 +246,7 @@ gen_spec_list <- function(regions, dates) {
       list_c() %>% 
       as.data.frame() %>% 
       magrittr::set_colnames(c("REGION", "ENGLISH.NAME")) %>% 
-      left_join(ebd, by = "ENGLISH.NAME") %>% 
+      left_join(ebd_tax, by = "ENGLISH.NAME") %>% 
       arrange(REGION, SORT) %>% 
       left_join(get_admin_names(parent_code), by = "REGION") %>% 
       dplyr::select(REGION, REGION.NAME, ENGLISH.NAME)
@@ -267,7 +267,7 @@ gen_spec_list <- function(regions, dates) {
       magrittr::set_colnames(c("REGION", "ENGLISH.NAME", "DATE")) %>% 
       left_join(regions_dates %>% distinct(DATE, DAY.NO), 
                 by = "DATE") %>% 
-      left_join(ebd, by = "ENGLISH.NAME") %>% 
+      left_join(ebd_tax, by = "ENGLISH.NAME") %>% 
       arrange(DAY.NO, REGION, SORT) %>% 
       left_join(get_admin_names(parent_code), by = "REGION") %>%
       dplyr::select(DAY.NO, REGION, REGION.NAME, ENGLISH.NAME) %>% # remove DATE for pivot

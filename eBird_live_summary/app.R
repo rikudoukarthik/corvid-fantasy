@@ -7,9 +7,15 @@ library(glue)
 library(writexl)
 library(rebird)
 
-source("token.R") # Get an eBird API token and assign it to object myebirdtoken
-source("functions.R")
-source("get_ebird_taxonomy.R")
+
+# source("token.R") # Get an eBird API token and assign it to object myebirdtoken
+# source("functions.R")
+# source("get_ebird_taxonomy.R")
+
+# local run
+source("eBird_live_summary/token.R") 
+source("eBird_live_summary/functions.R")
+ebd_tax <- read_csv("eBird_live_summary/eBirdTaxonomy.csv")
 
 
 # Define UI for app ----
@@ -50,6 +56,8 @@ ui <- fluidPage(
     
     # Input: download button 
     helpText(h4("Download your eBird summary!")),
+    checkboxInput(inputId = "text_req", label = "Generate textual summary?", 
+                  value = FALSE, width = NULL),
     downloadButton("downloadData", "Download",
                    label = "Summary"),
     

@@ -9,14 +9,14 @@ library(rebird)
 library(rclipboard)
 
 
-# source("token.R") # Get an eBird API token and assign it to object myebirdtoken
-# source("functions.R")
-# source("get_ebird_taxonomy.R")
+source("token.R") # Get an eBird API token and assign it to object myebirdtoken
+source("functions.R")
+source("get_ebird_taxonomy.R")
 
-# local run
-source("eBird_live_summary/token.R") 
-source("eBird_live_summary/functions.R")
-ebd_tax <- read_csv("eBird_live_summary/eBirdTaxonomy.csv")
+# # local run
+# source("eBird_live_summary/token.R")
+# source("eBird_live_summary/functions.R")
+# ebd_tax <- read_csv("eBird_live_summary/eBirdTaxonomy.csv")
 
 
 # Define UI for app ----
@@ -51,11 +51,19 @@ ui <- fluidPage(
                      choices = c("Choose one" = "", 
                                  get_admin_codes("IN")),
                      selected = "", label = "Admin. unit"), 
+      # # if IN, option to get 2nd admin unit summaries also
+      # conditionalPanel(
+      #   condition = "input.region_code == 'IN'", 
+      #   checkboxInput(inputId = "deep_admin", 
+      #                 label = "Generate summary for districts also (in addition to states)?",
+      #                 value = FALSE, width = NULL)
+      # ),
+      
       
       # Input: Event code for save file name
       helpText(h4("Provide a short event code (for file downloads)")),
       textInput(inputId = "event_code", 
-                value = glue("ABCD_{today() %>% year()}"), label = NULL), 
+                value = glue("GBBC_{today() %>% year()}"), label = NULL), 
       
     ),
     
@@ -105,6 +113,10 @@ server <- function(input, output) {
       seq(input$event_date_start, input$event_date_end, by = "days")
     }
   })
+  
+  event_day <- reactive ({
+    input$event_day
+  })
 
   region_info <- reactive ({
     get_admin_names(input$region_code)
@@ -142,7 +154,7 @@ server <- function(input, output) {
       basic_summary_adm1() %>% 
         mutate(TEXT = gen_textual_summ(SPECIES, OBSERVERS, CHECKLISTS, 
                                        event_code = input$event_code, 
-                                       event_day = if (exists("event_day()")) input$event_day else NULL)) %>% 
+                                       event_day = event_day())) %>% 
         dplyr::select(-c(SPECIES, OBSERVERS, CHECKLISTS))
     } else {
       NULL

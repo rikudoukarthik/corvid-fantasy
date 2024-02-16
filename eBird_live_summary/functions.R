@@ -375,16 +375,16 @@ gen_part_summ <- function(regions, dates, list_spec = NULL) {
 gen_textual_summ <- function(species, observers, lists, event_code, event_day = NULL) {
   
   day_of <- if (is.null(event_day)) {
-    ""
+    "In "
   } else {
-    glue("Day {event_day} of ")
+    glue("On Day {event_day} of ")
   }
   
   line1 <- "Congratulations to everyone! "
   
-  line2a <- glue("{day_of}{str_replace(event_code, '_', ' ')} has been impressive, ")
-  line2b <- glue("with a total of {species} species ")
-  line2c <- glue("reported by {observers} people ")
+  line2a <- glue("{day_of}{str_replace(event_code, '_', ' ')}, ")
+  line2b <- glue("{observers} observers ")
+  line2c <- glue("reported an impressive list of {species} species ")
   line2d <- glue("from {lists} checklists!")
 
   summary_text <- glue("{line1}{line2a}{line2b}{line2c}{line2d}")

@@ -27,39 +27,55 @@ ui <- fluidPage(
   
   helpText("Generate a summary of number of observers, checklists, and species reported for the selected date and region (country/state)."),
   
-  # Single vertical layout (no sidebar) with input and output definitions 
-  verticalLayout(
+  # Sidebar layout with input and output definitions 
+  sidebarLayout(
     
-    # Input: Date selection (value always yyyy-mm-dd, even if display format different)
-    helpText(h4("Select the start and end dates of interest")),
+    sidebarPanel(
+      
+      # Input: Date selection (value always yyyy-mm-dd, even if display format different)
+      helpText(h4("Select the start and end dates of interest")),
+      
+      dateInput(inputId = "event_date_start", 
+                label = "Start date", 
+                value = today()),
+      
+      dateInput(inputId = "event_date_end", 
+                label = "End date", 
+                value = today()),
+      
+      # Input: Region (admin unit) code
+      helpText(h4("Select the administrative unit code for the region of interest")),
+      helpText("Summary will include selection and all admin. units one level below selection"),
+      selectizeInput(inputId = "region_code", 
+                     choices = c("Choose one" = "", 
+                                 get_admin_codes("IN")),
+                     selected = "", label = "Admin. unit"), 
+      
+      # Input: Event code for save file name
+      helpText(h4("Provide a short event code (for file downloads)")),
+      textInput(inputId = "event_code", 
+                value = glue("ABCD_{today() %>% year()}"), label = NULL), 
+      
+    ),
     
-    dateInput(inputId = "event_date_start", 
-              label = "Start date", 
-              value = today()),
-    
-    dateInput(inputId = "event_date_end", 
-              label = "End date", 
-              value = today()),
-    
-    # Input: Region (admin unit) code
-    helpText(h4("Select the administrative unit code for the region of interest")),
-    helpText("Summary will include selection and all admin. units one level below selection"),
-    selectizeInput(inputId = "region_code", 
-                   choices = c("Choose one" = "", 
-                               get_admin_codes("IN")),
-                   selected = "", label = "Admin. unit"), 
-    
-    # Input: Event code for save file name
-    helpText(h4("Provide a short event code (for file downloads)")),
-    textInput(inputId = "event_code", 
-              value = glue("ABCD_{today() %>% year()}"), label = NULL), 
-    
-    # Input: download button 
-    helpText(h4("Download your eBird summary!")),
-    checkboxInput(inputId = "text_req", label = "Generate textual summary?", 
-                  value = FALSE, width = NULL),
-    downloadButton("downloadData", "Download",
-                   label = "Summary"),
+    mainPanel(
+      
+      # Input: download button 
+      helpText(h4("Download your eBird summary!")),
+      
+      checkboxInput(inputId = "text_req", label = "Generate textual summary?", 
+                    value = FALSE, width = NULL),
+      conditionalPanel(
+        condition = "input.text_req == true && input.event_date_start == input.event_date_end", 
+        helpText("Which Day of the event have you chosen?"),
+        numericInput(inputId = "event_day", label = NULL,
+                     value = 1, step = 1, min = 1, max = 4, width = "10%")
+      ),
+      
+      downloadButton("downloadData", "Download",
+                     label = "Summary"),
+      
+    ),
     
   )
   
@@ -108,6 +124,19 @@ server <- function(input, output) {
       gen_part_summ(dates = event_date(), list_spec = spec_list_adm2()) %>%
       filter(REGION != input$region_code)
   })
+  
+  # textual summary
+  text_summary_adm1 <- reactive ({
+    if (input$text_req == TRUE) {
+      basic_summary_adm1() %>% 
+        mutate(TEXT = gen_textual_summ(SPECIES, OBSERVERS, CHECKLISTS, 
+                                       event_code = input$event_code, 
+                                       event_day = if (exists("event_day()")) input$event_day else NULL))
+    } else {
+      NULL
+    }
+  })
+
 
   
   # Downloadable .xlsx of selected dataset 
@@ -128,12 +157,27 @@ server <- function(input, output) {
         incProgress(0.25)
         data2 <- basic_summary_adm2()    
         incProgress(0.25)
-        
-        write_xlsx(list("Summary (overall)" = data1,
-                        "Summary (subregions)" = data2,
-                        "Species list (overall)" = data3,
-                        "Species list (subregions)" = data4), 
-                   file)
+
+        if (!is.null(text_summary_adm1())) {
+          
+          data1_text <- text_summary_adm1()
+          
+          write_xlsx(list("Summary (overall)" = data1,
+                          "Summary (subregions)" = data2,
+                          "Species list (overall)" = data3,
+                          "Species list (subregions)" = data4,
+                          "Summary text (overall)" = data1_text), 
+                     file)
+          
+        } else {
+          
+          write_xlsx(list("Summary (overall)" = data1,
+                          "Summary (subregions)" = data2,
+                          "Species list (overall)" = data3,
+                          "Species list (subregions)" = data4), 
+                     file)
+          
+        }
         
       })
       

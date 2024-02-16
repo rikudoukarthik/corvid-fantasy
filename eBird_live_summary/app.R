@@ -6,6 +6,7 @@ library(lubridate)
 library(glue)
 library(writexl)
 library(rebird)
+library(rclipboard)
 
 
 # source("token.R") # Get an eBird API token and assign it to object myebirdtoken
@@ -75,6 +76,16 @@ ui <- fluidPage(
       downloadButton("downloadData", "Download",
                      label = "Summary"),
       
+      
+      # Display generated text
+      
+      helpText(h4("Textual summary of selected admin. unit:")),
+      
+      rclipboardSetup(),
+      textOutput("generated_text"),
+      # Button to copy text
+      uiOutput("clip"),
+      
     ),
     
   )
@@ -131,14 +142,14 @@ server <- function(input, output) {
       basic_summary_adm1() %>% 
         mutate(TEXT = gen_textual_summ(SPECIES, OBSERVERS, CHECKLISTS, 
                                        event_code = input$event_code, 
-                                       event_day = if (exists("event_day()")) input$event_day else NULL))
+                                       event_day = if (exists("event_day()")) input$event_day else NULL)) %>% 
+        dplyr::select(-c(SPECIES, OBSERVERS, CHECKLISTS))
     } else {
       NULL
     }
   })
-
-
-  
+    
+    
   # Downloadable .xlsx of selected dataset 
   output$downloadData <- downloadHandler(
     
@@ -185,6 +196,30 @@ server <- function(input, output) {
     
   )
   
+  
+  # Display generated text based on input when download button is clicked
+  output$generated_text <- renderText({
+    req(text_summary_adm1())
+    
+    text_summary_adm1() %>%
+      pull(TEXT)
+  })
+  
+  # Add clipboard buttons
+  output$clip <- renderUI({
+    req(text_summary_adm1())
+
+    rclipButton(
+      inputId = "copy_text",
+      label = "Copy",
+      clipText = text_summary_adm1() %>% pull(TEXT), 
+      icon = icon("clipboard"),
+      tooltip = "Click me... I dare you!",
+      placement = "top",
+      options = list(delay = list(show = 800, hide = 100), trigger = "hover")
+    )
+  })
+
 }
 
 # Define app ----

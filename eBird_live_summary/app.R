@@ -109,6 +109,18 @@ ui <- fluidPage(
         ),
         
         tabPanel(
+          "Top regions",
+          
+          # Input: download button 
+          helpText(h4("Download summary bar chart of top regions")),
+          
+          
+          downloadButton("downloadchart1", "Download",
+                         label = "Bar chart (.png)"),
+          
+        ),
+        
+        tabPanel(
           "About",
           
           h2("About"),
@@ -191,7 +203,14 @@ server <- function(input, output) {
       NULL
     }
   })
-    
+
+  
+  # ebird-style bar chart
+  ebird_barchart_adm2 <- reactive ({
+    basic_summary_adm2() %>% 
+      gen_ebird_barchart()
+  })
+  
     
   # Downloadable .xlsx of selected dataset 
   output$downloadData <- downloadHandler(
@@ -237,6 +256,21 @@ server <- function(input, output) {
       
     }
     
+  )
+  
+  # Downloadable .png of ebird bar charts 
+  output$downloadchart1 <- downloadHandler(
+    
+    filename = function(){glue("{input$event_code}.png")},
+    content = function(file) {
+
+      ggsave(file, plot = ebird_barchart_adm2(), device = "png",
+             width = 13, units = "in", dpi = 300,
+             height = min(8 * (n_distinct(basic_summary_adm2() %>% pull(REGION.NAME)))/14,
+                          10))
+      
+    }
+      
   )
   
   

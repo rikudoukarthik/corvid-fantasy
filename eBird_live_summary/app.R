@@ -58,45 +58,76 @@ ui <- fluidPage(
       #                 label = "Generate summary for districts also (in addition to states)?",
       #                 value = FALSE, width = NULL)
       # ),
+      checkboxInput(inputId = "text_req", label = "Generate textual summary?", 
+                    value = FALSE, width = NULL),
+      
       
       
       # Input: Event code for save file name
-      helpText(h4("Provide a short event code (for file downloads)")),
+      helpText(h4("Provide a short event code")),
+      helpText("This will be used in the file name and textual summary."),
       textInput(inputId = "event_code", 
-                value = glue("GBBC_{today() %>% year()}"), label = NULL), 
-      
-    ),
-    
-    mainPanel(
-      
-      # Input: download button 
-      helpText(h4("Download your eBird summary!")),
-      
-      checkboxInput(inputId = "text_req", label = "Generate textual summary?", 
-                    value = FALSE, width = NULL),
+                value = glue("GBBC_{today() %>% year()}"), label = "Event code"), 
+
       conditionalPanel(
         condition = "input.text_req == true && input.event_date_start == input.event_date_end", 
+        helpText(h4("Provide day of event")),
         helpText("Which Day of the event have you chosen?"),
         numericInput(inputId = "event_day", label = NULL,
                      value = 1, step = 1, min = 1, max = 4, width = "10%")
       ),
       
-      downloadButton("downloadData", "Download",
-                     label = "Summary"),
-      
-      
-      # Display generated text
-      
-      helpText(h4("Textual summary of selected admin. unit:")),
-      
-      rclipboardSetup(),
-      textOutput("generated_text"),
-      # Button to copy text
-      uiOutput("clip"),
-      
     ),
     
-  )
+    mainPanel(
+      
+      tabsetPanel(
+        
+        tabPanel(
+          "Summary",
+          
+          # Input: download button 
+          helpText(h4("Download your eBird summary!")),
+          
+          
+          downloadButton("downloadData", "Download",
+                         label = "Summary (.xlsx)"),
+          
+          
+          # Display generated text
+          
+          conditionalPanel(
+            condition = "input.text_req == true && input.region_code != ''", 
+            helpText(h4("Textual summary of selected admin. unit:")),
+            
+            rclipboardSetup(),
+            textOutput("generated_text"),
+            # Button to copy text
+            uiOutput("clip")
+          )
+          
+        ),
+        
+        tabPanel(
+          "About",
+          
+          h2("About"),
+          p("This tool is built to generate summaries of eBirding in a specific region for a specific date(s). It was created and is currently maintained for Bird Count India by Karthik Thrikkadeeri and Praveen J."),
+          p("The code for this Shiny app can be found", 
+            a("here", .noWS = "after",
+              href = "https://github.com/rikudoukarthik/corvid-fantasy/tree/main/eBird_live_summary"),
+            ". Please report any bugs or feature requests there."),
+          p("Inspiration taken from", 
+            a("birdsurveycrunch", href = "https://paintedstork.shinyapps.io/birdsurveycrunch/",
+              .noWS = "after"),
+            "."),
+          p("Last update: ", lubridate::today())
+        ),
+        
+      )
+      
+    
+  )),
   
 )
 

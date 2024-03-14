@@ -393,51 +393,67 @@ gen_textual_summ <- function(species, observers, lists, event_code, event_day = 
   
 }
 
-gen_ebird_barchart <- function(data) {
+gen_ebird_barchart <- function(data, obs_omit = FALSE) {
   
   require(patchwork)
   
   ebird_green <- "#36824B"
   
   ldb <- data %>% 
-    dplyr::select(REGION.NAME, OBSERVERS, CHECKLISTS, SPECIES) %>% 
-    arrange(desc(OBSERVERS), desc(CHECKLISTS), desc(SPECIES)) %>% 
+    {if (obs_omit == TRUE) {
+      dplyr::select(., REGION.NAME, CHECKLISTS, SPECIES) %>% 
+        arrange(desc(CHECKLISTS), desc(SPECIES))
+    } else {
+      dplyr::select(., REGION.NAME, OBSERVERS, CHECKLISTS, SPECIES) %>% 
+        arrange(desc(OBSERVERS), desc(CHECKLISTS), desc(SPECIES))
+    }} %>% 
     mutate(RANK = row_number(),
            REGION.NAME = fct_inorder(REGION.NAME)) %>% 
-    mutate(OBS.NUDGE = 0.9*str_count(OBSERVERS),
-           CHECK.NUDGE = 0.9*str_count(CHECKLISTS),
-           # OBS.COL = case_when(OBSERVERS < median(OBSERVERS) ~ "black",
-           #                     TRUE ~ "white"),
-           # CHECK.COL = case_when(CHECKLISTS < median(CHECKLISTS) ~ "black",
-           #                       TRUE ~ "white"),
-           # SPEC.COL = case_when(SPECIES < median(SPECIES) ~ "black",
-           #                      TRUE ~ "white"),
+    {if (obs_omit == TRUE) {
+      .
+    } else {
+      mutate(., OBS.NUDGE = 0.9*str_count(OBSERVERS))
+    }} %>% 
+    mutate(across(c(everything(), -starts_with("REGION")),
+                  ~ as.integer(.))) %>% 
+    mutate(CHECK.NUDGE = 0.9*str_count(CHECKLISTS),
            SPEC.NUDGE = 0.9*str_count(SPECIES))
   
-  plot1 <- ldb %>% 
-    ggplot(aes(y = fct_rev(REGION.NAME))) + 
-    geom_col(aes(x = OBSERVERS), fill = ebird_green, colour = NA) + 
-    geom_text(aes(x = OBSERVERS, label = OBSERVERS), colour = "black", hjust = -0.2) +
-    scale_x_continuous(limits = c(0, 
-                                max(ldb$OBSERVERS) + ceiling(0.3*diff(range(ldb$OBSERVERS)))),
-                       position = "top",
-                       name = "eBirders") +
-    theme_void() +
-    theme(axis.text.y = element_text(hjust = 1, size = 9),
-          axis.title.x.top = element_text(size = 14, hjust = 0.05,
-                                          margin = margin(0, 0, 4, 0, "pt")))
+  
+  if (obs_omit == FALSE) {
+    
+    plot1 <- ldb %>% 
+      ggplot(aes(y = fct_rev(REGION.NAME))) + 
+      geom_col(aes(x = OBSERVERS), fill = ebird_green, colour = NA) + 
+      geom_text(aes(x = OBSERVERS, label = OBSERVERS), colour = "black", hjust = -0.2) +
+      scale_x_continuous(limits = c(0, 
+                                    max(ldb$OBSERVERS) + ceiling(0.3*diff(range(ldb$OBSERVERS)))),
+                         position = "top",
+                         name = "eBirders") +
+      theme_void() +
+      theme(axis.text.y = element_text(hjust = 1, size = 9),
+            axis.title.x.top = element_text(size = 14, hjust = 0.05,
+                                            margin = margin(0, 0, 4, 0, "pt")))
+    
+  }
   
   plot2 <- ldb %>% 
     ggplot(aes(y = fct_rev(REGION.NAME))) + 
     geom_col(aes(x = CHECKLISTS), fill = ebird_green, colour = NA) + 
     geom_text(aes(x = CHECKLISTS, label = CHECKLISTS), colour = "black", hjust = -0.2) +
     scale_x_continuous(limits = c(0, 
-                                max(ldb$CHECKLISTS) + ceiling(0.3*diff(range(ldb$CHECKLISTS)))),
+                                  max(ldb$CHECKLISTS) + ceiling(0.3*diff(range(ldb$CHECKLISTS)))),
                        position = "top",
                        name = "Checklists") +
     theme_void() +
-    theme(axis.title.x.top = element_text(size = 14, hjust = 0.05,
-                                          margin = margin(0, 0, 4, 0, "pt")))
+    {if (obs_omit == FALSE) {
+      theme(axis.title.x.top = element_text(size = 14, hjust = 0.05,
+                                            margin = margin(0, 0, 4, 0, "pt")))
+    } else {
+      theme(axis.text.y = element_text(hjust = 1, size = 9),
+            axis.title.x.top = element_text(size = 14, hjust = 0.05,
+                                            margin = margin(0, 0, 4, 0, "pt")))
+    }}
 
   plot3 <- ldb %>% 
     mutate() %>% 
@@ -452,7 +468,11 @@ gen_ebird_barchart <- function(data) {
     theme(axis.title.x.top = element_text(size = 14, hjust = 0.05,
                                           margin = margin(0, 0, 4, 0, "pt")))
 
-  chart <- plot1 | plot2 | plot3
+  chart <- if (obs_omit == FALSE) {
+    plot1 | plot2 | plot3
+  } else {
+    plot2 | plot3
+  }
   
   return(chart)
   

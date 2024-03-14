@@ -208,8 +208,15 @@ server <- function(input, output) {
   
   # ebird-style bar chart
   ebird_barchart_adm2 <- reactive ({
-    basic_summary_adm2() %>% 
-      gen_ebird_barchart()
+      {if (length(event_date()) == 1) {
+        basic_summary_adm2() %>% 
+          gen_ebird_barchart()
+      } else {
+        basic_summary_adm2() %>% 
+          dplyr::select(REGION, REGION.NAME, TOTAL, ALL.DAYS) %>% 
+          pivot_wider(names_from = "TOTAL", values_from = "ALL.DAYS") %>% 
+          gen_ebird_barchart(obs_omit = TRUE)
+      }}
   })
   
     

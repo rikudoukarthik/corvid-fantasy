@@ -457,3 +457,38 @@ gen_ebird_barchart <- function(data) {
   return(chart)
   
 }
+
+ez_multiday_summ <- function(data) {
+  
+  temp <- data %>% 
+    pivot_wider(names_from = "TOTAL", values_from = c(contains("DAY")), 
+                names_glue = "{TOTAL}_{.value}") %>% 
+    relocate(REGION, REGION.NAME, 
+             starts_with("OBSERVERS"), starts_with("CHECKLISTS"), starts_with("SPECIES")) %>% 
+    mutate(across(everything(),
+                  ~ ifelse(. == "NA", NA_character_, .))) %>% 
+    # removes full-NA columns like ALL.DAY for observers
+    remove_empty(which = "cols") %>% 
+    mutate(across(everything(),
+                  ~ ifelse(is.na(.), "NA", .))) 
+  
+  ez <- temp %>% 
+    # everything needs to be same class
+    mutate(across(everything(), ~ as.character(.))) %>% 
+    # adding second header row
+    add_row((map(str_split(names(temp), "_"),
+                 ~ pluck(., 2, .default = "")) %>% 
+               unlist()) %>% 
+              bind_cols() %>% 
+              t() %>% 
+              as_tibble() %>% 
+              magrittr::set_colnames(names(temp)),
+            .before = 1) %>% 
+    # cleaning first header row
+    magrittr::set_colnames(map(str_split(names(temp), "_"),
+                               ~ pluck(., 1, .default = "")) %>% 
+                             unlist())
+  
+  return(ez)
+  
+}

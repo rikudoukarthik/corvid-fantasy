@@ -7,6 +7,7 @@ library(glue)
 library(writexl)
 library(rebird)
 library(rclipboard)
+library(janitor)
 
 
 source("token.R") # Get an eBird API token and assign it to object myebirdtoken
@@ -224,11 +225,22 @@ server <- function(input, output) {
 
         data3 <- spec_list_adm1()    
         incProgress(0.25)
-        data1 <- basic_summary_adm1()
+        data1 <- basic_summary_adm1() %>% 
+          {if (length(event_date()) == 1) {
+            .
+          } else {
+            ez_multiday_summ(.)
+          }}
+          
         incProgress(0.25)
         data4 <- spec_list_adm2()    
         incProgress(0.25)
-        data2 <- basic_summary_adm2()    
+        data2 <- basic_summary_adm2() %>% 
+          {if (length(event_date()) == 1) {
+            .
+          } else {
+            ez_multiday_summ(.)
+          }}
         incProgress(0.25)
 
         if (!is.null(text_summary_adm1())) {

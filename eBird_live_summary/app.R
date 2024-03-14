@@ -195,16 +195,28 @@ server <- function(input, output) {
   # textual summary
   text_summary_adm1 <- reactive ({
     if (input$text_req == TRUE) {
-      basic_summary_adm1() %>% 
-        mutate(TEXT = gen_textual_summ(SPECIES, OBSERVERS, CHECKLISTS, 
-                                       event_code = input$event_code, 
-                                       event_day = event_day())) %>% 
-        dplyr::select(-c(SPECIES, OBSERVERS, CHECKLISTS))
+      
+      {if (length(event_date()) == 1) {
+        basic_summary_adm1() %>% 
+          mutate(TEXT = gen_textual_summ(SPECIES, OBSERVERS, CHECKLISTS, 
+                                         event_code = input$event_code, 
+                                         event_day = event_day())) %>% 
+          dplyr::select(-c(SPECIES, OBSERVERS, CHECKLISTS))
+      } else {
+        basic_summary_adm1() %>% 
+          dplyr::select(REGION, REGION.NAME, TOTAL, ALL.DAYS) %>% 
+          pivot_wider(names_from = "TOTAL", values_from = "ALL.DAYS") %>% 
+          mutate(TEXT = gen_textual_summ(SPECIES, NULL, CHECKLISTS, 
+                                         event_code = input$event_code, 
+                                         event_day = event_day())) %>% 
+          dplyr::select(-c(SPECIES, CHECKLISTS))
+      }}
+      
     } else {
       NULL
     }
   })
-
+  
   
   # ebird-style bar chart
   ebird_barchart_adm2 <- reactive ({

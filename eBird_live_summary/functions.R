@@ -372,9 +372,10 @@ gen_part_summ <- function(regions, dates, list_spec = NULL) {
 
 # other higher-level functions ------------------------------------------------------
 
-gen_textual_summ <- function(species, observers, lists, event_code, event_day = NULL) {
-  
-  day_of <- if (is.null(event_day)) {
+gen_textual_summ <- function(species, observers = NULL, lists, event_code, event_day = NULL) {
+
+  day_of <- if (is.null(event_day) | is.null(observers)) { 
+    # even if day specified for multi-day, don't include
     "In "
   } else {
     glue("On Day {event_day} of ")
@@ -383,10 +384,10 @@ gen_textual_summ <- function(species, observers, lists, event_code, event_day = 
   line1 <- "Congratulations to everyone! "
   
   line2a <- glue("{day_of}{str_replace(event_code, '_', ' ')}, ")
-  line2b <- glue("{observers} observers ")
-  line2c <- glue("reported an impressive list of {species} species ")
-  line2d <- glue("from {lists} checklists!")
-
+  line2b <- if (!is.null(observers)) glue("{observers} observers ") else glue("observers ")
+  line2c <- glue("reported an list of {species} species ")
+  line2d <- glue("from {lists} checklists.")
+  
   summary_text <- glue("{line1}{line2a}{line2b}{line2c}{line2d}")
   
   return(summary_text)
